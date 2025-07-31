@@ -1,4 +1,4 @@
-import { RefObject, useMemo } from 'react';
+import { ReactNode, RefObject, useMemo } from 'react';
 
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
@@ -23,9 +23,42 @@ import { Output, OutputType } from '@/components/Output';
 
 import { useAppDispatch, useAppSelector } from '@/state/appTypes';
 import { setShouldHideLaunchableMarkets } from '@/state/appUiConfigs';
-import { setHasDismissedPmlBanner, setHasDismissedPumpBanner } from '@/state/dismissable';
-import { getHasDismissedPmlBanner, getHasDismissedPumpBanner } from '@/state/dismissableSelectors';
+import {
+  setHasDismissedFreeDepositsBanner,
+  setHasDismissedPmlBanner,
+  setHasDismissedPumpBanner,
+} from '@/state/dismissable';
+import {
+  getHasDismissedFreeDepositsBanner,
+  getHasDismissedPmlBanner,
+  getHasDismissedPumpBanner,
+} from '@/state/dismissableSelectors';
 import { setMarketFilter } from '@/state/perpetuals';
+
+const BaseBanner = ({
+  onClick,
+  onDismiss,
+  children,
+  StyledComponent,
+  withStarsOverlay = false,
+}: {
+  onClick: () => void;
+  onDismiss: (e: React.MouseEvent<any>) => void;
+  children: ReactNode;
+  StyledComponent: any;
+  withStarsOverlay?: boolean;
+}) => (
+  <StyledComponent onClick={onClick} role="button" tabIndex={0}>
+    {children}
+    {withStarsOverlay && <$StarsOverlay />}
+    <IconButton
+      tw="absolute right-0.5 top-0.5 border-none"
+      iconName={IconName.Close}
+      size={ButtonSize.XSmall}
+      onClick={onDismiss}
+    />
+  </StyledComponent>
+);
 
 export const MarketsBanners = ({
   marketsTableRef,
@@ -56,7 +89,12 @@ export const MarketsBanners = ({
   const shouldDisplayPmlBanner = !hasDismissedPmlBanner;
 
   const pmlBanner = shouldDisplayPmlBanner ? (
-    <$PmlBanner onClick={onClickPmlBanner} role="button" tabIndex={0}>
+    <BaseBanner
+      onClick={onClickPmlBanner}
+      onDismiss={onDismissPmlBanner}
+      StyledComponent={$PmlBanner}
+      withStarsOverlay
+    >
       <img src="/affiliates-hedgie.png" alt="affiliates hedgie" tw="h-8 mobile:hidden" />
 
       <div tw="mr-auto flex flex-col">
@@ -90,16 +128,7 @@ export const MarketsBanners = ({
           ]}
         />
       )}
-
-      <$StarsOverlay />
-
-      <IconButton
-        tw="absolute right-0.5 top-0.5 border-none"
-        iconName={IconName.Close}
-        size={ButtonSize.XSmall}
-        onClick={onDismissPmlBanner}
-      />
-    </$PmlBanner>
+    </BaseBanner>
   ) : null;
 
   const hasDismissedPumpBanner = useAppSelector(getHasDismissedPumpBanner);
@@ -120,7 +149,11 @@ export const MarketsBanners = ({
   const shouldDisplayPumpBanner = !hasDismissedPumpBanner;
 
   const pumpBanner = shouldDisplayPumpBanner ? (
-    <$PumpBanner onClick={onClickPumpBanner} role="button" tabIndex={0}>
+    <BaseBanner
+      onClick={onClickPumpBanner}
+      onDismiss={onDismissPumpBanner}
+      StyledComponent={$PumpBanner}
+    >
       <div tw="mr-auto flex flex-col">
         <span tw="mb-0.25 text-white font-extra-bold">
           {stringGetter({
@@ -137,22 +170,47 @@ export const MarketsBanners = ({
       </div>
 
       <img src="/pump-hedgie.png" alt="pump hedgie" tw="mr-2 h-14 mobile:hidden" />
-
-      <IconButton
-        tw="absolute right-0.5 top-0.5 border-none"
-        iconName={IconName.Close}
-        size={ButtonSize.XSmall}
-        onClick={(e: React.MouseEvent<any>) => onDismissPumpBanner(e)}
-      />
-    </$PumpBanner>
+    </BaseBanner>
   ) : null;
 
-  return pumpBanner ?? pmlBanner ?? null;
+  const hasDismissedFreeDepositsBanner = useAppSelector(getHasDismissedFreeDepositsBanner);
+
+  const onDismissFreeDepositsBanner = (e: React.MouseEvent<any>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dispatch(setHasDismissedFreeDepositsBanner(true));
+  };
+
+  const onClickFreeDepositsBanner = () => {
+    window.open('https://www.dydx.xyz/blog/free-deposits-dydx', '_blank');
+  };
+
+  const shouldDisplayFreeDepositsBanner = !hasDismissedFreeDepositsBanner;
+
+  const freeDepositsBanner = shouldDisplayFreeDepositsBanner ? (
+    <BaseBanner
+      onClick={onClickFreeDepositsBanner}
+      onDismiss={onDismissFreeDepositsBanner}
+      StyledComponent={$FreeDepositsBanner}
+      withStarsOverlay
+    >
+      <img src="/affiliates-hedgie.png" alt="hedgie" tw="h-8 mobile:hidden" />
+
+      <div tw="mr-auto flex flex-col">
+        <span tw="mb-0.25 text-white font-extra-bold">$100+ Deposits are Now Free and Instant</span>
+        <Button action={ButtonAction.Primary} tw="max-w-fit">
+          Learn more
+        </Button>
+      </div>
+    </BaseBanner>
+  ) : null;
+
+  return freeDepositsBanner ?? pumpBanner ?? pmlBanner ?? null;
 };
 
 const $MarketsPageBanner = styled.div`
   ${layoutMixins.row}
-  height: 5rem;
+  height: 8rem;
   border-radius: 10px;
   background-color: var(--color-layer-1);
   margin-bottom: 1rem;
@@ -162,44 +220,29 @@ const $MarketsPageBanner = styled.div`
   position: relative;
   overflow: hidden;
 
-  @media ${breakpoints.desktopSmall} {
-    margin-left: 1rem;
-    margin-right: 1rem;
-  }
-
-  @media ${breakpoints.tablet} {
-    span,
-    button {
-      z-index: 1;
-    }
-  }
-`;
-
-const $PmlBanner = styled($MarketsPageBanner)`
-  height: 8rem;
   img,
   span,
   button {
     z-index: 1;
   }
 
-  @media ${breakpoints.mobile} {
-    height: 8rem;
+  @media ${breakpoints.desktopSmall} {
+    margin-left: 1rem;
+    margin-right: 1rem;
+  }
+`;
 
+const $PmlBanner = styled($MarketsPageBanner)`
+  @media ${breakpoints.mobile} {
     span {
       font: var(--font-small-book);
     }
   }
 `;
 
-const $PumpBanner = styled($MarketsPageBanner)`
-  height: 8rem;
-  img,
-  span,
-  button {
-    z-index: 1;
-  }
-`;
+const $PumpBanner = styled($MarketsPageBanner)``;
+
+const $FreeDepositsBanner = styled($MarketsPageBanner)``;
 
 const $StarsOverlay = styled.div`
   position: absolute;
