@@ -1180,7 +1180,7 @@ export const notificationTypes: NotificationTypeConfig[] = [
         useAppSelector(BonsaiCore.account.parentSubaccountSummary.data)
       );
 
-      const shouldShowNotification = equity == null || equity.lt(20);
+      const shouldShowNotification = equity?.lt(20);
 
       useEffect(() => {
         if (shouldShowNotification) {
@@ -1195,7 +1195,7 @@ export const notificationTypes: NotificationTypeConfig[] = [
               actionAltText: 'Deposit now',
               renderActionSlot: () => <Link isAccent>Deposit now →</Link>,
             },
-            updateKey: ['free-deposits-messaging'],
+            updateKey: [`free-deposits-messaging-${new Date().getFullYear()}-${new Date().getMonth() + 1}`],
           });
         }
       }, [stringGetter, trigger, shouldShowNotification]);
