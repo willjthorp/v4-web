@@ -75,7 +75,7 @@ import {
 import { BIG_NUMBERS } from '@/lib/numbers';
 import { getAverageFillPrice } from '@/lib/orders';
 import { sleep } from '@/lib/timeUtils';
-import { isPresent, orEmptyRecord } from '@/lib/typeUtils';
+import { isPresent, orEmptyObj, orEmptyRecord } from '@/lib/typeUtils';
 
 import { useAccounts } from './useAccounts';
 import { useAffiliateMetadata } from './useAffiliatesInfo';
@@ -1169,6 +1169,46 @@ export const notificationTypes: NotificationTypeConfig[] = [
         if (notificationId === CosmosWalletNotificationTypes.CancelOrphanedTriggers) {
           dispatch(openDialog(DialogTypes.CancelOrphanedTriggers()));
         }
+      };
+    },
+  },
+  {
+    type: NotificationType.FreeDepositsMessaging,
+    useTrigger: ({ trigger }) => {
+      const stringGetter = useStringGetter();
+      const { equity } = orEmptyObj(
+        useAppSelector(BonsaiCore.account.parentSubaccountSummary.data)
+      );
+
+      const shouldShowNotification = equity?.lt(20);
+
+      useEffect(() => {
+        if (shouldShowNotification) {
+          trigger({
+            id: 'free-deposits-live',
+            displayData: {
+              icon: '⚡',
+              title: 'Free, Instant Deposits Now Live',
+              body: '$100+ deposits are now instant and free on dYdX.',
+              toastSensitivity: 'foreground',
+              groupKey: NotificationType.FreeDepositsMessaging,
+              actionAltText: 'Deposit now',
+              renderActionSlot: () => (
+                <span tw="cursor-pointer text-color-accent hover:underline">Deposit now →</span>
+              ),
+            },
+            updateKey: [
+              `free-deposits-messaging-${new Date().getFullYear()}-${new Date().getMonth() + 1}`,
+            ],
+          });
+        }
+      }, [stringGetter, trigger, shouldShowNotification]);
+    },
+    useNotificationAction: () => {
+      const dispatch = useAppDispatch();
+
+      return () => {
+        dispatch(openDialog(DialogTypes.Deposit2({})));
       };
     },
   },
