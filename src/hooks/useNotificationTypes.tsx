@@ -1193,9 +1193,13 @@ export const notificationTypes: NotificationTypeConfig[] = [
               toastSensitivity: 'foreground',
               groupKey: NotificationType.FreeDepositsMessaging,
               actionAltText: 'Deposit now',
-              renderActionSlot: () => <Link isAccent>Deposit now →</Link>,
+              renderActionSlot: () => (
+                <span tw="cursor-pointer text-color-accent hover:underline">Deposit now →</span>
+              ),
             },
-            updateKey: [`free-deposits-messaging-${new Date().getFullYear()}-${new Date().getMonth() + 1}`],
+            updateKey: [
+              `free-deposits-messaging-${new Date().getFullYear()}-${new Date().getMonth() + 1}`,
+            ],
           });
         }
       }, [stringGetter, trigger, shouldShowNotification]);
